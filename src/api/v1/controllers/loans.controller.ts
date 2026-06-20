@@ -1,4 +1,7 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
+import { ERROR_CODES } from "../../../constants/error-codes";
+import { NotFoundError } from "../errors/not-found-error";
+import { ValidationError } from "../errors/validation-error";
 import { loans } from "../utils/loans-store";
 
 export const getLoans = (_req: Request, res: Response) => {
@@ -9,19 +12,12 @@ export const getLoans = (_req: Request, res: Response) => {
   });
 };
 
-export const getLoanById = (req: Request, res: Response) => {
+export const getLoanById = (req: Request, res: Response, next: NextFunction) => {
   const id = Number(req.params.id);
   const loan = loans.find((item) => item.id === id);
 
   if (!loan) {
-    return res.status(404).json({
-      success: false,
-      error: {
-        message: "Loan application not found",
-        code: "LOAN_NOT_FOUND"
-      },
-      timestamp: new Date().toISOString()
-    });
+    return next(new NotFoundError("Loan application not found", ERROR_CODES.LOAN_NOT_FOUND));
   }
 
   return res.status(200).json({
@@ -30,8 +26,12 @@ export const getLoanById = (req: Request, res: Response) => {
   });
 };
 
-export const createLoan = (req: Request, res: Response) => {
+export const createLoan = (req: Request, res: Response, next: NextFunction) => {
   const { applicant, amount } = req.body;
+
+  if (!applicant || typeof applicant !== "string" || typeof amount !== "number") {
+    return next(new ValidationError("Invalid loan payload", ERROR_CODES.VALIDATION_ERROR));
+  }
 
   const newLoan = {
     id: loans.length ? Math.max(...loans.map((loan) => loan.id)) + 1 : 1,
@@ -49,19 +49,16 @@ export const createLoan = (req: Request, res: Response) => {
   });
 };
 
-export const updateLoan = (req: Request, res: Response) => {
+export const updateLoan = (req: Request, res: Response, next: NextFunction) => {
   const id = Number(req.params.id);
   const loan = loans.find((item) => item.id === id);
 
   if (!loan) {
-    return res.status(404).json({
-      success: false,
-      error: {
-        message: "Loan application not found",
-        code: "LOAN_NOT_FOUND"
-      },
-      timestamp: new Date().toISOString()
-    });
+    return next(new NotFoundError("Loan application not found", ERROR_CODES.LOAN_NOT_FOUND));
+  }
+
+  if (req.body.status && !["pending", "under_review", "flagged"].includes(req.body.status)) {
+    return next(new ValidationError("Invalid loan status", ERROR_CODES.VALIDATION_ERROR));
   }
 
   loan.status = req.body.status ?? loan.status;
@@ -72,19 +69,12 @@ export const updateLoan = (req: Request, res: Response) => {
   });
 };
 
-export const deleteLoan = (req: Request, res: Response) => {
+export const deleteLoan = (req: Request, res: Response, next: NextFunction) => {
   const id = Number(req.params.id);
   const index = loans.findIndex((item) => item.id === id);
 
   if (index === -1) {
-    return res.status(404).json({
-      success: false,
-      error: {
-        message: "Loan application not found",
-        code: "LOAN_NOT_FOUND"
-      },
-      timestamp: new Date().toISOString()
-    });
+    return next(new NotFoundError("Loan application not found", ERROR_CODES.LOAN_NOT_FOUND));
   }
 
   loans.splice(index, 1);
