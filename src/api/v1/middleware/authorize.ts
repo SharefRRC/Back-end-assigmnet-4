@@ -1,28 +1,30 @@
 import { NextFunction, Request, Response } from "express";
-import { ERROR_CODES } from "../../../constants/error-codes";
-import { AuthorizationError } from "../errors/authorization-error";
 import { UserRole } from "../types/auth.types";
 
 export const authorize = (allowedRoles: UserRole[]) => {
   return (_req: Request, res: Response, next: NextFunction) => {
-    const role = res.locals.user?.role;
+    const user = res.locals.user;
 
-    if (!role) {
-      return next(
-        new AuthorizationError(
-          "Forbidden: Role not found",
-          ERROR_CODES.ROLE_NOT_FOUND
-        )
-      );
+    if (!user?.role) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: "Forbidden: Role not found",
+          code: "ROLE_NOT_FOUND"
+        },
+        timestamp: new Date().toISOString()
+      });
     }
 
-    if (!allowedRoles.includes(role)) {
-      return next(
-        new AuthorizationError(
-          "Forbidden: Insufficient role",
-          ERROR_CODES.INSUFFICIENT_ROLE
-        )
-      );
+    if (!allowedRoles.includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: "Forbidden: Insufficient role",
+          code: "INSUFFICIENT_ROLE"
+        },
+        timestamp: new Date().toISOString()
+      });
     }
 
     return next();
