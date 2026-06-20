@@ -3,3 +3,5 @@ dist
 coverage
 .env
 src/logs/*.log
+serviceAccountKey.json
+src/config/serviceAccountKey.json
