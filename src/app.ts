@@ -10,6 +10,7 @@ import authRoutes from "./api/v1/routes/auth.routes";
 import { ensureLogsDir } from "./api/v1/utils/logger";
 import { notFoundHandler } from "./api/v1/middleware/not-found";
 import { errorHandler } from "./api/v1/middleware/error-handler";
+import usersRoutes from "./api/v1/routes/users.routes";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use(morgan("combined", { stream: accessLogStream }));
 app.use("/api/v1", healthRoutes);
 app.use("/api/v1", loansRoutes);
 app.use("/api/v1", authRoutes);
+app.use("/api/v1", usersRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
